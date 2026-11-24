@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareLoop Clinics | No-Show Guard Simulator</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--ink:#17243a;--muted:#66758b;--line:#e5ebf3;--blue:#2563eb;--teal:#0f9d8a;--red:#dc5353;--amber:#d68a17;--shadow:0 10px 30px rgba(28,48,78,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(115deg,#102b50,#174c78 65%,#147c83);color:#fff;padding:28px max(22px,calc((100% - 1180px)/2))}
+.eyebrow{font-size:11px;letter-spacing:1.7px;text-transform:uppercase;opacity:.78;font-weight:700}
+header h1{margin:8px 0 6px;font-size:clamp(25px,4vw,36px)}header p{margin:0;color:#d8e7f5;max-width:760px;line-height:1.5}
+.wrap{max-width:1180px;margin:24px auto;padding:0 18px 44px}
+.topline{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.pill{font-size:12px;padding:7px 11px;border-radius:30px;background:#e8f0ff;color:#244e9c;font-weight:700}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.panel h2{font-size:18px;margin:0 0 4px}.sub{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.45}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field label{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#40516a;font-weight:700;margin-bottom:7px}
+.field output{color:var(--blue);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue)}
+input[type=number],select{width:100%;padding:10px 11px;border:1px solid #d8e1ec;border-radius:9px;background:#fff;color:var(--ink);font-size:14px}
+select:focus,input:focus{outline:2px solid #b9d0ff;border-color:var(--blue)}
+.rangehint{display:flex;justify-content:space-between;color:#8793a5;font-size:10px;margin-top:2px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:13px}
+.primary{background:var(--blue);color:#fff}.secondary{background:#edf2f8;color:#33445c}
+.result{display:flex;align-items:center;gap:18px;margin:12px 0 20px}
+.gauge{width:124px;height:124px;border-radius:50%;display:grid;place-items:center;flex:none;background:conic-gradient(var(--teal) 0deg 70deg,#e8edf4 70deg 360deg);position:relative}
+.gauge:before{content:"";position:absolute;inset:10px;background:white;border-radius:50%}
+.gauge-inner{z-index:1;text-align:center}.gauge-inner strong{display:block;font-size:27px}.gauge-inner span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.status h3{margin:0 0 6px;font-size:19px}.status p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:#f7f9fc;border:1px solid var(--line);border-radius:11px;padding:13px}
+.metric span{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}.metric strong{font-size:21px}
+.threshold{border-top:1px solid var(--line);margin-top:17px;padding-top:16px}
+.threshold-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:8px}
+.recommend{margin-top:14px;padding:12px;border-radius:10px;background:#eef8f6;color:#176c61;font-size:13px;line-height:1.45}
+.wide{margin-top:18px}.batchgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}
+.batchcontrols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bar{height:13px;border-radius:20px;background:#e8edf4;overflow:hidden;display:flex;margin:13px 0 8px}
+.bar .attend{background:#16a085}.bar .miss{background:#e36a6a}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.bigcount{font-size:28px;font-weight:800;letter-spacing:-.5px}
+.note{font-size:11px;color:#7b8798;line-height:1.5;margin-top:14px}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:13px}summary{cursor:pointer;font-size:13px;font-weight:700;color:#34465f}
+details p,details li{font-size:12px;color:var(--muted);line-height:1.6}
+.footer{font-size:11px;color:#8793a5;text-align:center;margin-top:20px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.batchgrid{grid-template-columns:1fr}}
+@media(max-width:520px){.fields,.batchcontrols{grid-template-columns:1fr}.result{align-items:flex-start}.gauge{width:105px;height:105px}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">CareLoop Clinics · No-Show Guard</div>
+  <h1>Appointment Attendance Simulator</h1>
+  <p>Change a patient's details and see how the estimated no-show risk changes. Then simulate a group of appointments to estimate how many patients may attend.</p>
+</header>
+<main class="wrap">
+  <div class="topline">
+    <span class="pill">Interactive learning demo</span>
+    <span style="font-size:12px;color:#718096">Model reference: Logistic Regression · selected threshold: 0.35</span>
+  </div>
+  <section class="grid">
+    <div class="panel">
+      <h2>1. Patient and booking details</h2>
+      <p class="sub">Adjust the values below. The prediction updates automatically.</p>
+      <div class="fields">
+        <div class="field">
+          <label for="age">Patient age <output id="ageVal">42</output></label>
+          <input id="age" type="range" min="1" max="100" value="42">
+          <div class="rangehint"><span>1 year</span><span>100 years</span></div>
+        </div>
+        <div class="field">
+          <label for="distance">Distance to clinic <output id="distanceVal">8 km</output></label>
+          <input id="distance" type="range" min="0" max="50" step=".5" value="8">
+          <div class="rangehint"><span>0 km</span><span>50 km</span></div>
+        </div>
+        <div class="field">
+          <label for="fee">Appointment fee <output id="feeVal">₹500</output></label>
+          <input id="fee" type="range" min="0" max="2000" step="50" value="500">
+          <div class="rangehint"><span>₹0</span><span>₹2,000</span></div>
+        </div>
+        <div class="field">
+          <label for="lead">Days booked in advance <output id="leadVal">7 days</output></label>
+          <input id="lead" type="range" min="0" max="60" value="7">
+          <div class="rangehint"><span>Same day</span><span>60 days</span></div>
+        </div>
+        <div class="field">
+          <label for="prior">Previous no-shows <output id="priorVal">0</output></label>
+          <input id="prior" type="range" min="0" max="8" value="0">
+          <div class="rangehint"><span>0</span><span>8 or more</span></div>
+        </div>
+        <div class="field">
+          <label for="reminder">Reminder sent?</label>
+          <select id="reminder"><option value="1">Yes</option><option value="0">No</option></select>
+        </div>
+        <div class="field">
+          <label for="channel">Booking channel</label>
+          <select id="channel"><option>App</option><option selected>Phone</option><option>Walk-In</option></select>
+        </div>
+        <div class="field">
+          <label for="visit">Visit type</label>
+          <select id="visit"><option>Consultation</option><option selected>Follow-up</option></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="reset">Reset example</button>
+        <button class="secondary" id="random">Try random patient</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>2. Estimated attendance result</h2>
+      <p class="sub">The probability and decision are based on the current inputs.</p>
+      <div class="result">
+        <div class="gauge" id="gauge"><div class="gauge-inner"><strong id="riskPct">22%</strong><span>No-show risk</span></div></div>
+        <div class="status">
+          <h3 id="statusTitle">Likely to attend</h3>
+          <p id="statusText">This patient's estimated no-show risk is below the selected risk threshold.</p>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span>Estimated chance of attending</span><strong id="attendPct">78%</strong></div>
+        <div class="metric"><span>Risk flag at current threshold</span><strong id="flag">No</strong></div>
+      </div>
+      <div class="threshold">
+        <div class="threshold-head"><label for="threshold">No-show risk threshold</label><output id="thresholdVal">35%</output></div>
+        <input id="threshold" type="range" min="10" max="70" value="35">
+        <div class="rangehint"><span>10% · flag more people</span><span>70% · flag fewer people</span></div>
+      </div>
+      <div class="recommend" id="recommend">Suggested action: normal reminder process. No extra call is indicated by this demo threshold.</div>
+      <p class="note">A “likely to attend” result is not a guarantee. A flagged patient may still attend, and an unflagged patient may still miss the appointment.</p>
+    </div>
+  </section>
+
+  <section class="panel wide">
+    <h2>3. What if we have many appointments?</h2>
+    <p class="sub">Change the number of bookings and the average patient profile. This estimates group outcomes using the current risk calculation.</p>
+    <div class="batchgrid">
+      <div>
+        <div class="batchcontrols">
+          <div class="field"><label for="count">Number of appointments</label><input id="count" type="number" min="1" max="10000" value="100"></div>
+          <div class="field"><label for="profile">Patient group profile</label><select id="profile"><option value="typical">Typical group</option><option value="higher">Higher-risk group</option><option value="lower">Lower-risk group</option><option value="current">Use current patient profile</option></select></div>
+        </div>
+        <p class="note">Typical group starts from the project-wide no-show rate of about 22%. Higher/lower profiles are illustrative adjustments, not measured clinic segments.</p>
+      </div>
+      <div>
+        <div class="bigcount"><span id="batchAttend">78</span> <span style="font-size:14px;color:#718096;font-weight:600">estimated to attend</span></div>
+        <div style="font-size:14px;margin-top:4px"><strong id="batchMiss">22</strong> estimated no-shows out of <strong id="batchTotal">100</strong></div>
+        <div class="bar"><div class="attend" id="attendBar" style="width:78%"></div><div class="miss" id="missBar" style="width:22%"></div></div>
+        <div class="legend"><span><i class="dot" style="background:#16a085"></i>Attend</span><span><i class="dot" style="background:#e36a6a"></i>No-show</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel wide">
+    <h2>4. How the demo makes its estimate</h2>
+    <details>
+      <summary>Show model details and limitations</summary>
+      <p>Your notebook selects Logistic Regression. Its features are age, distance_km, fee_inr, lead_days, prior_no_shows, reminder_sent, booking_channel and visit_type. The notebook reports a test ROC-AUC of about 0.789 and uses a 0.35 threshold after comparing thresholds.</p>
+      <p>This standalone HTML does not load your trained Python model. It uses the coefficient directions and relative weights shown in the notebook, with illustrative feature scaling and a baseline anchored near the project's 22% no-show rate. Because the fitted scaler values and model intercept were not saved in the notebook output, its percentages are illustrative—not exact model predictions and not suitable for real patient decisions.</p>
+      <p>For exact predictions, export the fitted preprocessing pipeline and model from Python (for example, with joblib) and connect the HTML to a prediction API. This demo runs locally in your browser and does not send patient data anywhere.</p>
+    </details>
+  </section>
+  <div class="footer">CareLoop Clinics · No-Show Guard · Educational simulation only · No patient data is stored or transmitted</div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const controls = ["age","distance","fee","lead","prior","reminder","channel","visit","threshold","count","profile"];
+const defaults = {age:42,distance:8,fee:500,lead:7,prior:0,reminder:"1",channel:"Phone",visit:"Follow-up",threshold:35,count:100,profile:"typical"};
+const coeff = {age:-0.253880,distance:0.253448,fee:0.452761,lead:0.614471,prior:0.649612,reminder:-0.580669,App:-0.046804,Phone:0.215881,"Walk-In":-0.186364,Consultation:0.015658,"Follow-up":-0.015658};
+// Approximate centering/scaling used only to make an interactive illustration.
+function sigmoid(x){return 1/(1+Math.exp(-x))}
+function estimate(v){
+  const zAge=(v.age-45)/15, zDist=(v.distance-10)/8, zFee=(v.fee-600)/250,
+        zLead=(v.lead-7)/10, zPrior=(v.prior-.5)/1.1, zReminder=(Number(v.reminder)-.5)/.5;
+  const channelOffset = v.channel==="App"?coeff.App:(v.channel==="Phone"?coeff.Phone:coeff["Walk-In"]);
+  const visitOffset = v.visit==="Consultation"?coeff.Consultation:coeff["Follow-up"];
+  const score=-1.265 + coeff.age*zAge + coeff.distance*zDist + coeff.fee*zFee +
+    coeff.lead*zLead + coeff.prior*zPrior + coeff.reminder*zReminder +
+    channelOffset + visitOffset;
+  return Math.max(.01,Math.min(.95,sigmoid(score)));
+}
+function values(){
+ return {age:+$("age").value,distance:+$("distance").value,fee:+$("fee").value,lead:+$("lead").value,
+ prior:+$("prior").value,reminder:$("reminder").value,channel:$("channel").value,visit:$("visit").value};
+}
+function update(){
+ const v=values(), risk=estimate(v), threshold=+$("threshold").value/100, flagged=risk>=threshold;
+ $("ageVal").textContent=v.age;$("distanceVal").textContent=v.distance+" km";$("feeVal").textContent="₹"+v.fee.toLocaleString("en-IN");
+ $("leadVal").textContent=v.lead+" days";$("priorVal").textContent=v.prior;
+ $("thresholdVal").textContent=Math.round(threshold*100)+"%";
+ const pct=Math.round(risk*100),attend=100-pct;
+ $("riskPct").textContent=pct+"%";$("attendPct").textContent=attend+"%";
+ const color=flagged?"#dc5353":(risk>=.22?"#d68a17":"#0f9d8a");
+ $("gauge").style.background=`conic-gradient(${color} ${risk*360}deg,#e8edf4 0deg)`;
+ $("statusTitle").textContent=flagged?"Higher no-show risk":"Likely to attend";
+ $("statusText").textContent=flagged?"The estimated no-show risk is at or above the selected threshold. Consider a follow-up call.":"The estimated no-show risk is below the selected threshold.";
+ $("flag").textContent=flagged?"Yes":"No";$("flag").style.color=flagged?"#dc5353":"#0f9d8a";
+ $("recommend").textContent=flagged?"Suggested action: add this booking to the front desk's call list and confirm the appointment.":"Suggested action: continue the normal reminder process. No extra call is indicated by this demo threshold.";
+ updateBatch();
+}
+function updateBatch(){
+ const n=Math.max(1,Math.min(10000,parseInt($("count").value)||1));$("count").value=n;
+ let risk;
+ const p=$("profile").value;
+ if(p==="current") risk=estimate(values());
+ else if(p==="higher") risk=Math.min(.9,.22+.20);
+ else if(p==="lower") risk=Math.max(.03,.22-.10);
+ else risk=.22;
+ const misses=Math.round(n*risk), attends=n-misses, a=attends/n*100, m=misses/n*100;
+ $("batchAttend").textContent=attends.toLocaleString("en-IN");$("batchMiss").textContent=misses.toLocaleString("en-IN");
+ $("batchTotal").textContent=n.toLocaleString("en-IN");$("attendBar").style.width=a+"%";$("missBar").style.width=m+"%";
+}
+controls.forEach(id=>$(id).addEventListener("input",update));
+$("reset").addEventListener("click",()=>{Object.entries(defaults).forEach(([k,v])=>$(k).value=v);update()});
+$("random").addEventListener("click",()=>{
+ $("age").value=18+Math.floor(Math.random()*70);$("distance").value=(Math.random()*35).toFixed(1);
+ $("fee").value=Math.round(Math.random()*30)*50;$("lead").value=Math.floor(Math.random()*45);
+ $("prior").value=Math.floor(Math.random()*5);$("reminder").value=Math.random()>.5?"1":"0";
+ $("channel").selectedIndex=Math.floor(Math.random()*3);$("visit").selectedIndex=Math.floor(Math.random()*2);update();
+});
+update();
+</script>
+</body>
+</html>
