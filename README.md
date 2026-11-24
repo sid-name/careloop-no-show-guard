@@ -4,7 +4,7 @@ Analysing clinic appointments and predicting patient no-shows using Python, SQL,
 
 # CareLoop Clinics — No-Show Guard
 
-**GitHub Repository:** 
+**GitHub Repository:** https://github.com/sid-name/careloop-no-show-guard
 
 ## Project Overview
 
